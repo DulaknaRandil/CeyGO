@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cey_go/service/auth_helper.dart';
 import 'package:cey_go/ui/Slide%20Screen/slide_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen> {
     // Use a Timer to navigate after 15 seconds
     Timer(Duration(seconds: 5), () {
       Navigator.of(context).pushReplacement(
-        CupertinoPageRoute(builder: (ctx) => SlideScreen()),
+        CupertinoPageRoute(builder: (ctx) => AuthPage()),
       );
     });
   }

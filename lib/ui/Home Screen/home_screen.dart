@@ -1,215 +1,337 @@
+import 'dart:ui';
+import 'package:cey_go/model/place.dart';
+import 'package:cey_go/service/favourite_service.dart';
+import 'package:cey_go/service/place_service.dart';
+import 'package:cey_go/service/visa_service.dart';
+import 'package:cey_go/ui/Srearch%20Place%20Screen/search_place_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class HomeScreen extends StatelessWidget {
-  final double iconSize = 26;
+class HomeContent extends StatefulWidget {
+  @override
+  _HomeContentState createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  late Future<List<Place>> futurePlaces;
+  final FavouritesService _favouritesService = FavouritesService();
+  Map<String, bool> _favorites = {};
+
+  @override
+  void initState() {
+    super.initState();
+    futurePlaces = PlacesApiService().fetchPlaces();
+    _loadFavorites();
+  }
+
+  void _loadFavorites() async {
+    List<String> favoriteIds = await _favouritesService.getFavorites();
+    setState(() {
+      _favorites =
+          Map.fromIterable(favoriteIds, key: (id) => id, value: (_) => true);
+    });
+  }
+
+  void _toggleFavorite(String placeId, bool isFavorite) async {
+    await _favouritesService.toggleFavorite(placeId, !isFavorite);
+    setState(() {
+      _favorites[placeId] = !isFavorite;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final double screenWidth = MediaQuery.of(context).size.width;
-
-    return Scaffold(
-      backgroundColor: Color(0xFFFFE500), // Background Color
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            SizedBox(height: screenHeight * 0.05),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: 16),
+          Container(
+            color: Color(0xFFFFC100),
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
                 children: [
-                  Text(
-                    'Hi, Alex',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 22,
-                      color: Colors.black,
-                    ),
-                  ),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Image.asset(
-                        'assets/images/qr-scan-regular-120-1.png',
-                        width: iconSize,
-                        height: iconSize,
+                      Text(
+                        'Hi, Alex',
+                        style: GoogleFonts.poppins(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
                       ),
-                      SizedBox(width: 10),
-                      Image.asset(
-                        'assets/images/bell-pin-fill.png',
-                        width: iconSize,
-                        height: iconSize,
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.qr_code),
+                            color: Colors.black,
+                            onPressed: () async {
+                              await VisaService()
+                                  .handleVisaStatusAndNavigate(context);
+                            },
+                          ),
+                          IconButton(
+                            icon: SvgPicture.asset('assets/bell-pin-fill.svg'),
+                            onPressed: () {
+                              // Notification action
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
+                  SizedBox(height: 16),
+                  Card(
+                    margin: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        // Redirect to the image's relevant page
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/banner.png'),
+                            fit: BoxFit.fill,
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        height: 130,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 0),
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(159, 248, 248, 135),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Stack(
+                        children: [
+                          BackdropFilter(
+                            filter: ImageFilter.blur(
+                              sigmaX: 10.0,
+                              sigmaY: 10.0,
+                            ),
+                            child: Container(
+                              color: Colors.white.withOpacity(0.2),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              SizedBox(width: 8),
+                              SvgPicture.asset('assets/group-2.svg'),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  style: TextStyle(color: Colors.black),
+                                  decoration: InputDecoration(
+                                    hintText: 'Search for Destinations',
+                                    border: InputBorder.none,
+                                    hintStyle: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w300,
+                                      color: Colors.black.withOpacity(0.8),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
                 ],
               ),
             ),
-            SizedBox(height: screenHeight * 0.015),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: Container(
-                height: 38,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(6),
-                  color: Colors.white,
-                ),
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
+          ),
+          Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(16),
+                bottom: Radius.circular(0),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Image.asset(
-                      'assets/images/group-2.png',
-                      width: 21,
-                      height: 21,
+                    Text(
+                      'Popular Places',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
                     ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Search for Destinations',
-                          hintStyle: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w300,
-                            fontSize: 12,
-                          ),
-                          border: InputBorder.none,
+                    TextButton(
+                      onPressed: () {
+                        // View all action
+                      },
+                      child: Text(
+                        'View All',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.black,
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-            SizedBox(height: screenHeight * 0.015),
-            Image.asset(
-              'assets/images/new-elephant-sanctuary-will-provide-safe-home-for-elephants-retired-from-brutal-logging-industry.png',
-              width: screenWidth,
-              height: screenHeight * 0.25,
-              fit: BoxFit.cover,
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Popular Places',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: Colors.black,
-                    ),
-                  ),
-                  Text(
-                    'View All',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w400,
-                      fontSize: 12,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: screenHeight * 0.02),
-            ...buildPlaceCards(
-                context,
-                'Galle',
-                'Whispers of the ocean in colonial walls',
-                'assets/images/card-1.png'),
-            ...buildPlaceCards(
-                context,
-                'Ella',
-                'Scenic vistas and tranquil trails in the clouds',
-                'assets/images/card-1-2.png'),
-            ...buildPlaceCards(
-                context,
-                'Anuradhapura',
-                'Ancient roots, where history breathes tranquility',
-                'assets/images/card-1-3.png'),
-            ...buildPlaceCards(
-                context,
-                'Kandy',
-                'Where sacred relics meet serene highlands',
-                'assets/images/card-1-4.png'),
-            SizedBox(height: screenHeight * 0.02),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              bottomNavItem('assets/images/home-indicator.png', true),
-              bottomNavItem('assets/images/frame-4.png', false),
-              bottomNavItem('assets/images/frame-4.png', false),
-              bottomNavItem('assets/images/frame-4.png', false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                SizedBox(height: 8),
+                FutureBuilder<List<Place>>(
+                  future: futurePlaces,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return Text('No places available');
+                    }
 
-  List<Widget> buildPlaceCards(BuildContext context, String title,
-      String description, String imagePath) {
-    return [
-      Stack(
-        children: [
-          Image.asset(
-            imagePath,
-            width: MediaQuery.of(context).size.width - 30,
-            height: 90,
-            fit: BoxFit.cover,
-          ),
-          Positioned(
-            bottom: 15,
-            left: 15,
-            child: Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                fontSize: 20,
-                color: Colors.white,
-              ),
+                    return Column(
+                      children: snapshot.data!.map((place) {
+                        bool isFavorite =
+                            _favorites[place.id.toString()] ?? false;
+                        return _buildPlaceCard(
+                          place.name,
+                          place.description,
+                          place.imageUrl,
+                          isFavorite,
+                          place.id.toString(),
+                          context,
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+                SizedBox(height: 16),
+              ],
             ),
           ),
-          Positioned(
-            bottom: 0,
-            left: 15,
-            child: Text(
-              description,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          Positioned(
-            top: 15,
-            right: 15,
-            child: Image.asset(
-              'assets/images/ellipse-47.png',
-              width: 29,
-              height: 29,
+          Container(
+            color: Colors.white,
+            child: Column(
+              children: [
+                // Add any additional content here if needed
+              ],
             ),
           ),
         ],
       ),
-      SizedBox(height: MediaQuery.of(context).size.height * 0.02),
-    ];
+    );
   }
 
-  Widget bottomNavItem(String assetName, bool isActive) {
-    return Image.asset(
-      assetName,
-      width: iconSize,
-      height: iconSize,
-      color: isActive ? Colors.black : Colors.grey,
+  Widget _buildPlaceCard(
+    String title,
+    String subtitle,
+    String assetPath,
+    bool isFavorite,
+    String placeId,
+    BuildContext context,
+  ) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: InkWell(
+        onTap: () {
+          // Navigate to SearchedPlaceScreen with the place details
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SearchedPlaceScreen(
+                placeName: title,
+                placeImage: assetPath,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: NetworkImage(assetPath),
+              fit: BoxFit.cover,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          height: 100,
+          child: Stack(
+            children: [
+              Positioned(
+                bottom: 16,
+                left: 16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(0.5, 0.5),
+                            color: Colors.black,
+                            blurRadius: 0.5,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () {
+                    _toggleFavorite(placeId, isFavorite);
+                  },
+                  child: CircleAvatar(
+                    radius: 14.5,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: isFavorite ? Colors.red : Colors.grey,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

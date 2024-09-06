@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "286463022361",
+    "project_id": "ceygo-4e4d4",
+    "storage_bucket": "ceygo-4e4d4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:286463022361:android:347490ff6c7565635b2188",
+        "android_client_info": {
+          "package_name": "com.example.cey_go"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "286463022361-8ivuvcu3ejv7ugugouir2ikuglnbu1jr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-u3pLZzLzh8J3NS5eeQk37ETFcIhUtRk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "286463022361-8ivuvcu3ejv7ugugouir2ikuglnbu1jr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

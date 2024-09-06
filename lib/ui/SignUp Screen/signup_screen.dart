@@ -1,6 +1,10 @@
-import 'package:cey_go/ui/Login%20Screen/login_screen.dart';
+import 'package:cey_go/controller/signup_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:cey_go/service/auth_service.dart';
+import 'package:cey_go/ui/Login%20Screen/login_screen.dart';
+import 'package:cey_go/ui/Sign%20Up%20Details/signup_details.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -8,16 +12,17 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  final SignUpController _signUpController = SignUpController();
+  final AuthService _authService = AuthService();
+
   bool _obscureText = true;
   bool _showConfirmPassword = false;
-
-  final TextEditingController _passwordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _passwordController.addListener(() {
-      if (_passwordController.text.isNotEmpty) {
+    _signUpController.passwordController.addListener(() {
+      if (_signUpController.password.isNotEmpty) {
         setState(() {
           _showConfirmPassword = true;
         });
@@ -27,6 +32,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
         });
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _signUpController.clearControllers();
+    super.dispose();
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    await _authService.googleSignIn();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SignUpFinishScreen(),
+      ),
+    );
+  }
+
+  Future<void> _handleFacebookSignIn() async {
+    await _authService.facebookSignIn();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SignUpFinishScreen(),
+      ),
+    );
   }
 
   @override
@@ -66,12 +97,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: screenHeight * 0.05),
-              buildTextField('Email Address', Icons.email, false),
+              buildTextField('Email Address', Icons.email, false,
+                  _signUpController.emailController),
               SizedBox(height: 20),
-              buildPasswordField('Password'),
+              buildPasswordField(
+                  'Password', _signUpController.passwordController),
               SizedBox(height: 10),
               if (_showConfirmPassword)
-                buildTextField('Confirm Password', Icons.lock, true),
+                buildTextField('Confirm Password', Icons.lock, true,
+                    _signUpController.confirmPasswordController),
               SizedBox(height: 10),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 30),
@@ -87,7 +121,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               SizedBox(height: screenHeight * 0.03),
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () async {
+                  await _authService.signup(
+                    email: _signUpController.email,
+                    password: _signUpController.password,
+                    context: context,
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   shape: RoundedRectangleBorder(
@@ -119,9 +159,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  socialButton('assets/images/google.png'),
+                  socialButton('assets/images/google.png', _handleGoogleSignIn),
                   SizedBox(width: 20),
-                  socialButton('assets/images/facebook.png'),
+                  socialButton(
+                      'assets/images/facebook.png', _handleFacebookSignIn),
                 ],
               ),
               SizedBox(height: screenHeight * 0.1),
@@ -164,8 +205,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget buildTextField(String hintText, IconData icon, bool obscureText) {
+  Widget buildTextField(String hintText, IconData icon, bool obscureText,
+      TextEditingController controller) {
     return TextField(
+      controller: controller,
       obscureText: obscureText,
       style: TextStyle(color: Colors.black),
       decoration: InputDecoration(
@@ -204,9 +247,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget buildPasswordField(String hintText) {
+  Widget buildPasswordField(String hintText, TextEditingController controller) {
     return TextField(
-      controller: _passwordController,
+      controller: controller,
       obscureText: _obscureText,
       style: TextStyle(color: Colors.black),
       decoration: InputDecoration(
@@ -242,19 +285,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget socialButton(String imagePath) {
+  Widget socialButton(String imagePath, VoidCallback onPressed) {
     return GestureDetector(
-      onTap: () {},
+      onTap: onPressed,
       child: Container(
-        padding: EdgeInsets.all(10),
+        height: 48,
+        width: 48,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.grey),
         ),
-        child: Image.asset(
-          imagePath,
-          width: 35,
-          height: 35,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset(imagePath),
         ),
       ),
     );

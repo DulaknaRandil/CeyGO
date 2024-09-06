@@ -1,13 +1,74 @@
+import 'package:cey_go/controller/signin_controller.dart';
+import 'package:cey_go/service/auth_service.dart';
+import 'package:cey_go/ui/Forget%20Password/forget_password.dart';
 import 'package:cey_go/ui/Home%20Screen/home_screen.dart';
+import 'package:cey_go/ui/Navigation%20Bar/navigation_Bar.dart';
 import 'package:cey_go/ui/SignUp%20Screen/signup_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart'; // Import Provider
+import 'package:fluttertoast/fluttertoast.dart'; // Import Fluttertoast for showing errors
+import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
+import 'package:google_sign_in/google_sign_in.dart'; // Import GoogleSignIn
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart'; // Import FacebookAuth
 
 class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
+    final SignInController signInController = SignInController();
+    final AuthService _authService = AuthService();
+
+    Future<void> _handleGoogleSignIn() async {
+      await _authService.googleSignIn();
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        bool userExists = await _authService.checkUserExists(user.uid);
+        if (userExists) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => NavigationBarScreen(),
+            ),
+          );
+        } else {
+          Fluttertoast.showToast(
+            msg: "User data does not exist. Please register.",
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.SNACKBAR,
+            backgroundColor: Colors.red.shade400,
+            textColor: Colors.white,
+            fontSize: 14,
+          );
+        }
+      }
+    }
+
+    Future<void> _handleFacebookSignIn() async {
+      await _authService.facebookSignIn();
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        bool userExists = await _authService.checkUserExists(user.uid);
+        if (userExists) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => NavigationBarScreen(),
+            ),
+          );
+        } else {
+          Fluttertoast.showToast(
+            msg: "User data does not exist. Please register.",
+            toastLength: Toast.LENGTH_LONG,
+            gravity: ToastGravity.SNACKBAR,
+            backgroundColor: Colors.red.shade400,
+            textColor: Colors.white,
+            fontSize: 14,
+          );
+        }
+      }
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -41,32 +102,51 @@ class LoginScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: screenHeight * 0.05),
-              buildTextField('Email Address', Icons.email, false),
+              buildTextField(
+                'Email Address',
+                Icons.email,
+                false,
+                signInController.emailController,
+              ),
               SizedBox(height: 20),
-              buildTextField('Password', Icons.lock, true),
+              buildTextField(
+                'Password',
+                Icons.lock,
+                true,
+                signInController.passwordController,
+              ),
               SizedBox(height: 10),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 5),
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: Text(
-                    'Forgot Password?',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      height: 1.5,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (ctx) => ForgetPasswordScreen()),
+                      );
+                    },
+                    child: Text(
+                      'Forgot Password?',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        height: 1.5,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.right,
                     ),
-                    textAlign: TextAlign.right,
                   ),
                 ),
               ),
               SizedBox(height: screenHeight * 0.03),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (ctx) => HomeScreen()),
-                  );
+                  _authService.signin(
+                      email: signInController.emailController.text,
+                      password: signInController.passwordController.text,
+                      context: context);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
@@ -99,9 +179,10 @@ class LoginScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  socialButton('assets/images/google.png'),
+                  socialButton('assets/images/google.png', _handleGoogleSignIn),
                   SizedBox(width: 20),
-                  socialButton('assets/images/facebook.png'),
+                  socialButton(
+                      'assets/images/facebook.png', _handleFacebookSignIn),
                 ],
               ),
               SizedBox(height: screenHeight * 0.1),
@@ -144,10 +225,12 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget buildTextField(String hintText, IconData icon, bool obscureText) {
+  Widget buildTextField(String hintText, IconData icon, bool obscureText,
+      TextEditingController controller) {
     return TextField(
+      controller: controller,
       obscureText: obscureText,
-      style: TextStyle(color: Colors.black), // Text color is black while typing
+      style: TextStyle(color: Colors.black),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: GoogleFonts.poppins(
@@ -162,7 +245,9 @@ class LoginScreen extends StatelessWidget {
             ? IconButton(
                 icon: Icon(Icons.visibility_off),
                 color: Colors.black.withOpacity(0.6),
-                onPressed: () {},
+                onPressed: () {
+                  // Add logic to toggle password visibility
+                },
               )
             : null,
         focusedBorder: OutlineInputBorder(
@@ -175,13 +260,13 @@ class LoginScreen extends StatelessWidget {
         ),
         contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
       ),
-      cursorColor: Colors.black, // Cursor color is black
+      cursorColor: Colors.black,
     );
   }
 
-  Widget socialButton(String imagePath) {
+  Widget socialButton(String imagePath, VoidCallback onPressed) {
     return GestureDetector(
-      onTap: () {},
+      onTap: onPressed,
       child: Container(
         padding: EdgeInsets.all(10),
         decoration: BoxDecoration(
